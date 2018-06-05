@@ -518,7 +518,7 @@ namespace LightJson
 	            {
 	                if (type != typeof(object) && type != typeof(bool))
 	                {
-	                    ThrowCastException();
+	                    ThrowCastException(value, type);
 	                }
 
 	                return value.AsBoolean;
@@ -566,7 +566,7 @@ namespace LightJson
 	                    return value.AsNumber;
 	                }
 
-                    ThrowCastException();
+                    ThrowCastException(value, type);
 
 	                break;
 	            }
@@ -574,7 +574,7 @@ namespace LightJson
 	            {
 	                if (type != typeof(object) && type != typeof(string))
 	                {
-                        ThrowCastException();
+                        ThrowCastException(value, type);
 	                }
 
 	                return value.AsString;
