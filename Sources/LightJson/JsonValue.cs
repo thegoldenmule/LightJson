@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Diagnostics;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
 using System.Reflection;
 using LightJson.Serialization;
 
