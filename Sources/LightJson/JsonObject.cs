@@ -285,6 +285,11 @@ namespace LightJson
         /// </summary>
 	    private JsonValue ToJsonValue(Type type, object value)
 	    {
+	        if (type == typeof(object))
+	        {
+	            type = value.GetType();
+	        }
+
 	        if (type == typeof(long)
 	            || type == typeof(int)
 	            || type == typeof(short)

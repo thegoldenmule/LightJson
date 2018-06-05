@@ -249,4 +249,30 @@ namespace LightJson.Test
         [JsonIgnore]
         public float Bar;
     }
+
+    public class PrimitiveDynamic
+    {
+        public object DynamicByte;
+        public object DynamicShort;
+        public object DynamicInt;
+        public object DynamicLong;
+        public object DynamicFloat;
+        // JSON does not support double
+        public object DynamicBool;
+        public object DynamicString;
+
+        public static PrimitiveDynamic Instance()
+        {
+            return new PrimitiveDynamic
+            {
+                DynamicByte = Randomizer.RandomByte(),
+                DynamicShort = Randomizer.RandomShort(),
+                DynamicInt = Randomizer.RandomInt(),
+                DynamicLong = Randomizer.RandomLong(),
+                DynamicFloat = Randomizer.RandomFloat(),
+                DynamicBool = Randomizer.RandomBool(),
+                DynamicString = Randomizer.RandomString()
+            };
+        }
+    }
 }

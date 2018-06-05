@@ -102,5 +102,23 @@ namespace LightJson.Test
             Assert.IsTrue(json.Contains("Foo"));
             Assert.IsFalse(json.Contains("Bar"));
         }
+
+        [Test]
+        public void Dynamic()
+        {
+            var before = PrimitiveDynamic.Instance();
+
+            var json = new JsonObject(before).ToString();
+            
+            var after = (PrimitiveDynamic) JsonValue.Parse(json).As(typeof(PrimitiveDynamic));
+
+            Assert.AreEqual(before.DynamicByte, after.DynamicByte);
+            Assert.AreEqual(before.DynamicShort, after.DynamicShort);
+            Assert.AreEqual(before.DynamicInt, after.DynamicInt);
+            Assert.AreEqual(before.DynamicLong, after.DynamicLong);
+            Assert.IsTrue(Math.Abs((float) before.DynamicFloat - (float) after.DynamicFloat) < float.Epsilon);
+            Assert.AreEqual(before.DynamicBool, after.DynamicBool);
+            Assert.AreEqual(before.DynamicString, after.DynamicString);
+        }
     }
 }
