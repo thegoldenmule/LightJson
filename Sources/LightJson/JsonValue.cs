@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Reflection;
 using LightJson.Serialization;
 
@@ -514,7 +515,7 @@ namespace LightJson
 	        {
 	            case JsonValueType.Boolean:
 	            {
-	                if (type != typeof(bool))
+	                if (type != typeof(object) && type != typeof(bool))
 	                {
 	                    ThrowCastException();
 	                }
@@ -523,6 +524,17 @@ namespace LightJson
 	            }
 	            case JsonValueType.Number:
 	            {
+	                if (type == typeof(object))
+	                {
+	                    var str = value.AsString;
+	                    if (str.Contains("."))
+	                    {
+	                        return Convert.ToSingle(value.AsNumber);
+	                    }
+
+	                    return Convert.ToInt32(value.AsNumber);
+	                }
+
 	                if (type == typeof(byte))
 	                {
 	                    return Convert.ToByte(value.AsNumber);
@@ -553,13 +565,13 @@ namespace LightJson
 	                    return value.AsNumber;
 	                }
 
-	                ThrowCastException();
+                    ThrowCastException();
 
 	                break;
 	            }
 	            case JsonValueType.String:
 	            {
-	                if (type != typeof(string))
+	                if (type != typeof(object) && type != typeof(string))
 	                {
                         ThrowCastException();
 	                }
