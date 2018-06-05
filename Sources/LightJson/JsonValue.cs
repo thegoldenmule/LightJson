@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Reflection;
@@ -499,12 +500,12 @@ namespace LightJson
 	        return As(type, this);
 	    }
 
-	    private void ThrowCastException()
+	    private void ThrowCastException(JsonValue json, Type strictType)
 	    {
 	        throw new Exception(string.Format(
 	            "Cannot convert {0} to {1}.",
-	            value,
-	            type));
+	            json.ToString(true),
+	            strictType));
         }
 
 	    private object As(Type type, JsonValue value)
@@ -514,11 +515,6 @@ namespace LightJson
 	        {
 	            case JsonValueType.Boolean:
 	            {
-	                if (type != typeof(bool))
-	                {
-	                    ThrowCastException();
-	                }
-
 	                return value.AsBoolean;
 	            }
 	            case JsonValueType.Number:
@@ -530,7 +526,7 @@ namespace LightJson
 
 	                if (type == typeof(int))
 	                {
-	                    return Convert.ToInt32(value.AsNumber);
+	                    return value.AsInteger;
 	                }
 
 	                if (type == typeof(short))
@@ -553,26 +549,14 @@ namespace LightJson
 	                    return value.AsNumber;
 	                }
 
-	                ThrowCastException();
-
-	                break;
+	                return value.AsNumber;
 	            }
 	            case JsonValueType.String:
 	            {
-	                if (type != typeof(string))
-	                {
-                        ThrowCastException();
-	                }
-
 	                return value.AsString;
 	            }
 	            case JsonValueType.Array:
 	            {
-	                if (!type.IsArray)
-	                {
-                        ThrowCastException();
-	                }
-
 	                var asArray = value.AsJsonArray;
 	                var len = asArray.Count;
 	                var array = (Array) Activator.CreateInstance(type, new object[] { len });
@@ -587,53 +571,90 @@ namespace LightJson
 	            }
                 case JsonValueType.Object:
 	            {
-	                if (type.IsPrimitive)
+	                if (type.IsPrimitiveType())
 	                {
-                        ThrowCastException();
+                        ThrowCastException(value, typeof(object));
 	                }
-
+                    
 	                var instance = Activator.CreateInstance(type);
 	                var asObject = value.AsJsonObject;
-	                foreach (var record in asObject)
+
+                    // dictionaries
+                    if (instance is IDictionary)
 	                {
-	                    var key = record.Key;
-	                    var fieldValue = record.Value;
-
-	                    var field = type.GetField(
-	                        key,
-	                        BindingFlags.Instance | BindingFlags.Public);
-	                    if (null == field)
+                        var dict = (IDictionary) instance;
+	                    var genericArgs = type.GetGenericArguments();
+	                    if (genericArgs.Length == 2 && typeof(string) == genericArgs[0])
 	                    {
-                            // check for fields with attributes
-	                        var allFields = type.GetFields(BindingFlags.Instance | BindingFlags.Public);
-	                        for (int i = 0, len = allFields.Length; i < len; i++)
+	                        var fieldType = genericArgs[1];
+	                        foreach (var record in asObject)
 	                        {
-	                            var allField = allFields[i];
-	                            var attributes = allField.GetCustomAttributes(typeof(JsonNameAttribute), true);
-	                            if (attributes.Length > 0)
-	                            {
-	                                if (((JsonNameAttribute) attributes[0]).Name == key)
-	                                {
-	                                    field = allField;
-	                                    break;
-	                                }
-	                            }
+	                            var key = record.Key;
+	                            var fieldValue = record.Value;
+	                            var fieldAsValue = As(fieldType, fieldValue);
 
+	                            dict[key] = fieldAsValue;
 	                        }
-
-	                        if (null == field)
-	                        {
-	                            throw new Exception(string.Format(
-	                                "Cannot find field {0} on {1}.",
-	                                key,
-	                                type));
-                            }
-	                    }
-
-	                    var fieldAsValue = As(field.FieldType, fieldValue);
-                        field.SetValue(instance, fieldAsValue);
+                        }
 	                }
+                    // regular objects
+                    else
+                    {
+                        foreach (var record in asObject)
+                        {
+                            var key = record.Key;
+                            var fieldValue = record.Value;
 
+                            var field = type.GetField(
+                                key,
+                                BindingFlags.Instance | BindingFlags.Public);
+                            if (null == field)
+                            {
+                                // check for fields with attributes
+                                var allFields = type.GetFields(BindingFlags.Instance | BindingFlags.Public);
+                                for (int i = 0, len = allFields.Length; i < len; i++)
+                                {
+                                    var allField = allFields[i];
+                                    var attributes = allField.Attributes<JsonNameAttribute>();
+                                    if (attributes.Length > 0)
+                                    {
+                                        if (attributes[0].Name == key)
+                                        {
+                                            field = allField;
+                                            break;
+                                        }
+                                    }
+
+                                }
+
+                                if (null == field)
+                                {
+                                    throw new Exception(string.Format(
+                                        "Cannot find field {0} on {1}.",
+                                        key,
+                                        type));
+                                }
+                            }
+
+                            var fieldAsValue = As(field.FieldType, fieldValue);
+
+                            try
+                            {
+                                field.SetValue(instance, fieldAsValue);
+                            }
+                            catch (Exception exception)
+                            {
+                                throw new Exception(string.Format(
+                                    "Could not set field {0}:{1} with [{2}]:{3}. Exception: {4}.",
+                                    field.Name,
+                                    field.FieldType,
+                                    fieldAsValue,
+                                    null == fieldAsValue ? "null" : fieldAsValue.GetType().Name,
+                                    exception));
+                            }
+                        }
+                    }
+                    
 	                return instance;
 	            }
 	        }
