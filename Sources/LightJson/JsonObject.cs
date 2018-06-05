@@ -61,6 +61,11 @@ namespace LightJson
         /// <param name="value">Value to create an object for.</param>
 	    public JsonObject(object value)
 	    {
+	        if (null == value)
+	        {
+	            return;
+	        }
+
             // special handling for dictionaries
 	        var dict = value as IDictionary;
 	        if (null != dict)
@@ -287,7 +292,14 @@ namespace LightJson
 	    {
 	        if (type == typeof(object))
 	        {
-	            type = value.GetType();
+	            if (null != value)
+	            {
+	                type = value.GetType();
+                }
+	            else
+	            {
+                    return new JsonValue();
+	            }
 	        }
 
 	        if (type == typeof(long)

@@ -120,5 +120,15 @@ namespace LightJson.Test
             Assert.AreEqual(before.DynamicBool, after.DynamicBool);
             Assert.AreEqual(before.DynamicString, after.DynamicString);
         }
+
+        [Test]
+        public void DynamicNull()
+        {
+            var json = new JsonObject(new PrimitiveDynamic()).ToString();
+
+            var after = (PrimitiveDynamic) JsonValue.Parse(json).As(typeof(PrimitiveDynamic));
+
+            Assert.IsNull(after.DynamicByte);
+        }
     }
 }
